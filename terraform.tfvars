@@ -1,0 +1,5 @@
+region = "ca-central-1"
+bucket = "halostatue-blog"
+domain = "halostatue.ca"
+profile = "terraform"
+email = "austin@halostatue.ca"

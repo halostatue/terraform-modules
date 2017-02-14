@@ -1,141 +1,157 @@
-################################################################################################################
-## Creates a setup to serve a static website from an AWS S3 bucket, with a Cloudfront CDN and
-## certificates from AWS Certificate Manager.
-##
-## Bucket name restrictions:
-##    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-## Duplicate Content Penalty protection:
-##    Description: https://support.google.com/webmasters/answer/66359?hl=en
-##    Solution: http://tuts.emrealadag.com/post/cloudfront-cdn-for-s3-static-web-hosting/
-##        Section: Restricting S3 access to Cloudfront
-## Deploy remark:
-##    Do not push files to the S3 bucket with an ACL giving public READ access, e.g s3-sync --acl-public
-##
-## 2016-05-16
-##    AWS Certificate Manager supports multiple regions. To use CloudFront with ACM certificates, the
-##    certificates must be requested in region us-east-1
-################################################################################################################
+# Create a setup to redirect from an AWS S3 bucket + CloudFront distribution to
+# a different distribution.
+#
+# Bucket name restrictions:
+#    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+#
+# Duplicate Content Penalty protection:
+#    Description: https://support.google.com/webmasters/answer/66359?hl=en
+#    Solution: http://tuts.emrealadag.com/post/cloudfront-cdn-for-s3-static-web-hosting/
+#        Section: Restricting S3 access to Cloudfront
+#
+# Deploy remark:
+#    Do not push files to the S3 bucket with an ACL giving public READ access,
+#    e.g s3-sync --acl-public
+#
+# 2016-05-16
+#    AWS Certificate Manager supports multiple regions. To use CloudFront with
+#    ACM certificates, the certificates must be requested in region us-east-1
 
-################################################################################################################
-## Configure the AWS provider for the specific region
-################################################################################################################
 provider "aws" {
-  alias = "${var.region}"
   region = "${var.region}"
+  profile = "${var.profile}"
 }
 
-################################################################################################################
-## Configure the bucket and static website hosting
-################################################################################################################
-data "template_file" "bucket_policy" {
-  template = "${file("${path.module}/website_redirect_bucket_policy.json")}"
-  vars {
-    bucket = "site.${replace("${var.domain}",".","-")}"
-    secret = "${var.duplicate-content-penalty-secret}"
+data "aws_iam_policy_document" "redirect-bucket-policy" {
+  policy_id = "RedirectReadPolicy-${var.bucket}"
+
+  statement = {
+    sid = "PublicReadAccess"
+    principals = {
+      type = "AWS"
+      identifiers = [ "*" ]
+    }
+    effect = "Allow"
+    actions = [ "s3:GetObject" ]
+    resources = [ "arn:aws:s3:::${var.bucket}/*" ]
   }
 }
 
-resource "aws_s3_bucket" "website_bucket" {
-  provider = "aws.${var.region}"
-  bucket = "site.${replace("${var.domain}",".","-")}"
-  policy = "${data.template_file.bucket_policy.rendered}"
+data "aws_iam_policy_document" "publisher-policy" {
+  policy_id = "PublisherPolicy-${var.bucket}"
+
+  statement = {
+    sid = "PublisherListAccess"
+    effect = "Allow"
+    actions = [ "s3:ListBucket" ]
+    resources = [ "arn:aws:s3:::${var.bucket}" ]
+  }
+
+  statement = {
+    sid = "PublisherWriteAccess"
+    effect = "Allow"
+    actions = [
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:GetObjectAcl",
+      "s3:ListBucket",
+      "s3:PutObject",
+      "s3:PutObjectAcl"
+    ]
+    resources = [ "arn:aws:s3:::${var.bucket}/*" ]
+  }
+}
+
+resource "aws_s3_bucket" "redirect-bucket" {
+  bucket = "${var.bucket}"
+  policy = "${data.aws_iam_policy_document.redirect-bucket-policy.json}"
 
   website {
     redirect_all_requests_to = "https://${var.target}"
   }
 
-//  logging {
-//    target_bucket = "${var.log_bucket}"
-//    target_prefix = "${var.log_bucket_prefix}"
-//  }
-
   tags {
-//    Name = "Staging Website for releasequeue.com"
-//    Generator = "http://gohugo.io"
-//    Environment = "${var.environment}"
+    Name = "Redirect Bucket for static site ${var.target}"
   }
 }
 
-################################################################################################################
-## Configure the credentials and access to the bucket for a deployment user
-################################################################################################################
-data "template_file" "deployer_role_policy_file" {
-  template = "${file("${path.module}/deployer_role_policy.json")}"
-  vars {
-    bucket = "site.${replace("${var.domain}",".","-")}"
-  }
-}
-
-resource "aws_iam_policy" "site_deployer_policy" {
-  provider = "aws.${var.region}"
-  name = "site.${replace("${var.domain}",".","-")}.deployer"
+resource "aws_iam_policy" "site-publisher-policy" {
+  name = "${var.bucket}.publisher"
   path = "/"
-  description = "Policy allowing to publish a new version of the website to the S3 bucket"
-  policy = "${data.template_file.deployer_role_policy_file.rendered}"
+  description = "Policy allowing publication of a new website version to S3."
+  policy = "${data.aws_iam_policy_document.publisher-policy.json}"
 }
 
-resource "aws_iam_policy_attachment" "staging-site-deployer-attach-user-policy" {
-  provider = "aws.${var.region}"
-  name = "site.${replace("${var.domain}",".","-")}-deployer-policy-attachment"
-  users = ["${var.deployer}"]
-  policy_arn = "${aws_iam_policy.site_deployer_policy.arn}"
+resource "aws_iam_policy_attachment" "site-publisher-attach-user-policy" {
+  name = "${var.bucket}.publisher-policy-attachment"
+  users = [ "${var.publisher}" ]
+  policy_arn = "${aws_iam_policy.site-publisher-policy.arn}"
 }
 
-################################################################################################################
-## Create a Cloudfront distribution for the static website
-################################################################################################################
-resource "aws_cloudfront_distribution" "website_cdn" {
+resource "aws_cloudfront_distribution" "redirect-distribution" {
   enabled = true
-  price_class = "PriceClass_200"
-  http_version = "http1.1"
+  is_ipv6_enabled = true
 
-  "origin" {
-    origin_id = "origin-bucket-${aws_s3_bucket.website_bucket.id}"
-    domain_name = "${aws_s3_bucket.website_bucket.website_endpoint}"
+  origin {
+    origin_id = "${aws_s3_bucket.redirect-bucket.id}.origin"
+    domain_name = "${aws_s3_bucket.redirect-bucket.website_endpoint}"
+
     custom_origin_config {
       origin_protocol_policy = "http-only"
-      http_port = "80"
-      https_port = "443"
-      origin_ssl_protocols = ["TLSv1"]
+      http_port = 80
+      https_port = 443
+      origin_ssl_protocols = [ "TLSv1", "TLSv1.1", "TLSv1.2" ]
     }
+
     custom_header {
       name = "User-Agent"
       value = "${var.duplicate-content-penalty-secret}"
     }
   }
+
+  aliases = [ "${var.domain-aliases}" ]
   default_root_object = "index.html"
+  retain_on_delete = true
+
   custom_error_response {
     error_code = "404"
     error_caching_min_ttl = "360"
     response_code = "200"
-    response_page_path = "/404.html"
+    response_page_path = "${var.not-found-response-path}"
   }
-  "default_cache_behavior" {
-    allowed_methods = ["GET", "HEAD", "DELETE", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods = ["GET", "HEAD"]
-    "forwarded_values" {
+
+  default_cache_behavior {
+    allowed_methods = [
+      "GET", "HEAD", "DELETE", "OPTIONS", "PATCH", "POST", "PUT"
+    ]
+    cached_methods = [ "GET", "HEAD" ]
+    target_origin_id = "${aws_s3_bucket.redirect-bucket.id}.origin"
+    forwarded_values {
       query_string = false
       cookies {
         forward = "none"
       }
     }
-    min_ttl = "0"
-    default_ttl = "300" //3600
-    max_ttl = "1200" //86400
-    target_origin_id = "origin-bucket-${aws_s3_bucket.website_bucket.id}"
+
+    min_ttl = 0
+    default_ttl = "${var.default-ttl}"
+    max_ttl = "${var.max-ttl}"
+
     // This redirects any HTTP request to HTTPS. Security first!
     viewer_protocol_policy = "redirect-to-https"
     compress = true
   }
-  "restrictions" {
-    "geo_restriction" {
+
+  restrictions {
+    geo_restriction {
       restriction_type = "none"
     }
   }
-  "viewer_certificate" {
+
+  viewer_certificate {
+    cloudfront_default_certificate = "${length(var.acm-certificate-arn) > 0 ? "false" : "true" }"
     acm_certificate_arn = "${var.acm-certificate-arn}"
-    ssl_support_method = "sni-only"
+    ssl_support_method = "${length(var.acm-certificate-arn) > 0 ? "sni-only" : "" }"
     minimum_protocol_version = "TLSv1"
   }
-  aliases = ["${var.domain}"]
 }

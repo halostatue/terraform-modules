@@ -1,7 +1,7 @@
-output "website_cdn_hostname" {
-  value = "${aws_cloudfront_distribution.website_cdn.domain_name}"
+output "redirect-cdn-hostname" {
+  value = "${aws_cloudfront_distribution.redirect-distribution.domain_name}"
 }
 
-output "website_cdn_zone_id" {
-  value = "${aws_cloudfront_distribution.website_cdn.hosted_zone_id}"
+output "redirect-cdn-zone-id" {
+  value = "${aws_cloudfront_distribution.redirect-distribution.hosted_zone_id}"
 }

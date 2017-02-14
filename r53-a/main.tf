@@ -7,14 +7,14 @@ variable "zone_id" {}
 variable "records" { type = "list" }
 
 provider "aws" {
-  alias = "${var.region}"
   region = "${var.region}"
+  profile = "${var.profile}"
 }
 
-resource "aws_route53_record" "cname" {
+resource "aws_route53_record" "a" {
   zone_id = "${var.zone_id}"
   name = "${var.domain}"
-  type = "CNAME"
+  type = "A"
   ttl = "${var.ttl}"
   records = [ "${var.records}" ]
 }
