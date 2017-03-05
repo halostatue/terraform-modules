@@ -1,0 +1,177 @@
+#! /bin/bash
+
+declare bn0 cmd
+declare -a environments
+
+bn0=$(basename "${0}")
+environments=($(find .. -name main.tf -depth 2 | awk -F/ '{ print $2; }'))
+
+function error()
+{
+  echo "${*}"
+  echo
+} >&2
+
+function abort()
+{
+  if (( ${#} )); then
+    error "${@}"
+    usage
+  else
+    error Error during execution.
+  fi
+  exit 1
+}
+
+function ok()
+{
+  exit 0
+}
+
+function usage()
+{
+  cat <<HELP
+usage: ${bn0} terraform-command [options]
+       ${bn0} tfstate
+       ${bn0} setup-remote [ENVIRONMENT]+
+
+Run commands related to the shared states managed by the terraformer
+infrastructure.
+HELP
+}
+
+function help()
+{
+  if ! (( ${#} )); then
+    usage
+    exit 0
+  fi
+
+  case "${1}" in
+    tfstate|setup-remote)
+      help-"${1}"
+      ;;
+    *)
+      exec terraform "${1}" -help
+      ;;
+  esac
+}
+
+function temp_output()
+{
+  local tempfile
+  tempfile=$(mktemp -t configs)
+  if terraform output > "${tempfile}"; then
+    echo "${tempfile}"
+  else
+    echo 2>&1 "Error getting terraform output"
+    exit 3
+  fi
+}
+
+function filter_command()
+{
+  sed -n "/^${1}-command = \$/,/ = \$/ { /^${1}-command = \$/d;/ = \$/d;p;}" "${2}"
+}
+
+function filter_config()
+{
+  sed -n "/^data \"terraform_remote_state\" \"${1}\" [{]\$/,/^[}]$/p" "${2}"
+}
+
+function help-tfstate()
+{
+  cat <<HELP
+usage: ${bn0} tfstate
+
+Extract the tfstate configurations as files from the output of this environment
+and put them in ../shared.
+HELP
+}
+
+function tfstate()
+{
+  local tempfile tfstate config
+  local -a tfstate_configs
+
+  tempfile=$(temp_output) || exit ${?}
+  tfstate_configs=($(awk '/"terraform_remote_state"/ { print $3; }' "${tempfile}" | sed 's/"//g'))
+
+  for config in "${tfstate_configs[@]}"; do
+    tfstate="${config}-tfstate.tf"
+    filter_config "${config}" "${tempfile}" > ../shared/"${tfstate}"
+  done
+}
+
+function help-setup-remote()
+{
+  cat <<HELP
+usage: ${bn0} setup-remote [ENVIRONMENT]+
+
+Setup the remote configuration for the provided environment or all
+environments.
+
+Known environments:
+HELP
+
+  local env
+  for env in "${environments[@]}"; do
+    echo "  - ${env}"
+  done
+}
+
+function setup-one-remote()
+{
+  (( ${#} )) || abort No remote provided to configure.
+
+  local env tempfile terraform_command
+  env="${1}"
+  tempfile="${2}"
+
+  if ! grep -c "${env}"-command "${tempfile}" &>/dev/null; then
+    error "No remote command found for environment '${env}'."
+    return 2
+  fi
+
+  if ! [ -f ../"${env}"/main.tf ]; then
+    error "Not a valid environment '${env}'."
+    return 3
+  fi
+
+  terraform_command=$(filter_command "${env}" "${tempfile}")
+
+  cd ../"${env}" || abort
+  echo "Configuring remote for $(pwd): ${terraform_command}"
+  eval "${terraform_command}"
+}
+
+function setup-remote()
+{
+  local env tempfile
+  tempfile=$(temp_output) || exit ${?}
+
+  if (( ${#} )); then
+    for env in "${@}"; do
+      setup-one-remote "${env}" "${tempfile}"
+    done
+  else
+    for env in "${environments[@]}"; do
+      setup-one-remote "${env}" "${tempfile}"
+    done
+  fi
+}
+
+cmd="${1:-apply}"
+shift
+
+case "${cmd}" in
+  help|-help)
+    help "${@}"
+    ;;
+  tfstate|setup-remote)
+    "${cmd}" "${@}"
+    ;;
+  *)
+    terraform "${cmd}" "${@}"
+    ;;
+esac
