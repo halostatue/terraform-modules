@@ -1,11 +1,11 @@
-# Terraform-Modules
+# Terraform Modules
 
 This repository contains the [Terraform][] modules required to setup a static
 website, hosted out of an S3 bucket. The site is fronted by a CloudFront
 distribution, can use AWS Certificate Manager for HTTPS and allows for
 configuring the required DNS entries in Route53. Let’s Encrypt support (through
 AWS Lambda) is being explored.
- 
+
 The modules also take care of:
 
 *   preventing the origin bucket being indexed by search bots (avoiding the
@@ -15,6 +15,24 @@ The modules also take care of:
 *   redirecting HTTP to HTTPS.
 
 These modules are derived from [scripts][] by [Ringo De Smet][].
+
+## Versioning
+
+halostatue/terraform-modules aims to mostly follow [Semantic Versioning][],
+noted by `git` tags. A Major tag (e.g., `v1`) will move with the most recent
+minor release of a version (it will move from `v1.0` to `v1.1` as appropriate).
+There will be no patch versions released.
+
+This is version 1.0, tagged as (`v1.0`), which can be specified in a`module
+source` as:
+
+   `github.com/halostatue/terraform-modules//`*`<module>`*`?ref=v1.0`
+   `github.com/halostatue/terraform-modules//`*`<module>`*`?ref=v1`
+
+It is strongly recommended you use the `ref` to select a specific branch,
+because there may be incompatible changes in future versions (based on other
+work I have recently done on a fork of this, I am likely reworking or removing
+the Route53 modules entirely), and all work is done on `master`.
 
 ## Introduction
 
@@ -389,3 +407,4 @@ The `region` and `profile` inputs affect the AWS provider in the module.
 [scripts]: https://github.com/ringods/terraform-website-s3-cloudfront-route53
 [Modules documentation]: https://www.terraform.io/docs/modules/sources.html#github
 [duplicate content penalty]: https://support.google.com/webmasters/answer/66359?hl=en
+[Semantic Versioning]: http://semver.org/

@@ -1,10 +1,5 @@
-## 2.0.0 (October 16, 2016)
+## 1.0
 
-IMPROVEMENTS:
-
- * Upgraded the modules to be compatible with Terraform 0.7.x
-
-## 1.0.0 (October 16, 2016)
-
-FEATURES:
- * Last version compatible with Terraform up to 0.6.x
+-    New release versioning because these are modified from Ringo de Smet’s.
+-    Added a VERSION file.
+-    Known to be compatible with Terraform 0.8.
