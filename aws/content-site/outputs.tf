@@ -1,48 +1,38 @@
 output "publisher" {
-  value = "${aws_iam_user.publisher.name}"
-}
-
-data "template_file" "publisher_access_key" {
-  vars {
-    name   = "${aws_iam_user.publisher.name}"
-    id     = "${aws_iam_access_key.publisher.id}"
-    secret = "${aws_iam_access_key.publisher.secret}"
-  }
-
-  template = <<EOF
-
-[$${name}]
-aws_access_key_id = $${id}
-aws_secret_access_key = $${secret}
-
-EOF
+  value = aws_iam_user.publisher.name
 }
 
 output "bucket-name" {
-  value = "${data.template_file.bucket_name.rendered}"
+  value = aws_s3_bucket.bucket.id
 }
 
 output "publisher-access-key" {
   sensitive = true
-  value     = "${data.template_file.publisher_access_key.rendered}"
+  value     = <<CREDENTIALS
+
+[${aws_iam_user.publisher.name}]
+aws_access_key_id = ${aws_iam_access_key.publisher.id}
+aws_secret_access_key = ${aws_iam_access_key.publisher.secret}
+
+CREDENTIALS
 }
 
 output "cdn-id" {
-  value = "${aws_cloudfront_distribution.content.id}"
+  value = aws_cloudfront_distribution.content.id
 }
 
 output "cdn-aliases" {
-  value = "${join(",", aws_cloudfront_distribution.content.alias.*)}"
+  value = join(",", aws_cloudfront_distribution.content.aliases.*)
 }
 
 output "cdn-domain" {
-  value = "${aws_cloudfront_distribution.content.domain_name}"
+  value = aws_cloudfront_distribution.content.domain_name
 }
 
 output "cdn-zone-id" {
-  value = "${aws_cloudfront_distribution.content.hosted_zone_id}"
+  value = aws_cloudfront_distribution.content.hosted_zone_id
 }
 
 output "content-key" {
-  value = "${random_id.content-key.b64}"
+  value = random_id.content-key.b64_url
 }
