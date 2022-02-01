@@ -1,6 +1,0 @@
-.DS_Store
-.terraform/
-terraform.dot
-.terraform.old/
-terraform.tfstate
-terraform.tfstate.backup

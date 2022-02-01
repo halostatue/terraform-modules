@@ -1,19 +1,19 @@
 output "bucket-name" {
-  value = "${data.template_file.bucket_name.rendered}"
+  value = aws_s3_bucket.bucket.id
 }
 
 output "cdn-id" {
-  value = "${aws_cloudfront_distribution.redirect.id}"
+  value = aws_cloudfront_distribution.redirect.id
 }
 
 output "cdn-aliases" {
-  value = "${join(",", aws_cloudfront_distribution.redirect.alias.*)}"
+  value = join(",", aws_cloudfront_distribution.redirect.aliases.*)
 }
 
 output "cdn-domain" {
-  value = "${aws_cloudfront_distribution.redirect.domain_name}"
+  value = aws_cloudfront_distribution.redirect.domain_name
 }
 
 output "cdn-zone-id" {
-  value = "${aws_cloudfront_distribution.redirect.hosted_zone_id}"
+  value = aws_cloudfront_distribution.redirect.hosted_zone_id
 }
