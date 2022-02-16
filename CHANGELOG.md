@@ -1,3 +1,18 @@
+## 4.0.0/ 2022-02-17
+
+- Removed `aws/s3-tfstate-bucket` module. This was created for early versions of
+  Terraform remote state management, and is no longer useful as a separate
+  module. Follow the instructions in
+  [MIGRATION.md](MIGRATION.md#migrating-aws%2Fs3-tfstate-bucket-resources).
+
+- Removed `var.routing-rules` from `aws/content-site` and `aws/redirect-site`
+  modules. Assignment of routing rules from variables is no longer supported by
+  the AWS provider.
+
+- Updated to support terraform-provider-aws 4.0. After upgrading it is necessary
+  to import items to your local state to prevent data loss. Follow the
+  instructions in [MIGRATION.md](MIGRATION.md#migrating-to-v4).
+
 ## 3.1.1 / 2022-02-17
 
 - Added a lifecycle rule to `content-site.aws_s3_bucket.logs` bucket to prevent

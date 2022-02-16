@@ -21,7 +21,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
 
     random = {
@@ -37,6 +37,16 @@ locals {
 
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket_name
+
+  tags = {
+    Purpose         = "Redirect Bucket of ${var.domain} to ${var.target}"
+    Terraform       = true
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
+  }
+}
+
+resource "aws_s3_bucket_policy" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
     Id      = "RedirectReadPolicy-${var.bucket}"
     Version = "2012-10-17"
@@ -55,15 +65,14 @@ resource "aws_s3_bucket" "bucket" {
       }
     ]
   })
+}
 
-  website {
-    redirect_all_requests_to = "https://${var.target}"
-  }
+resource "aws_s3_bucket_website_configuration" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
 
-  tags = {
-    Purpose         = "Redirect Bucket of ${var.domain} to ${var.target}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
+  redirect_all_requests_to {
+    protocol  = "https"
+    host_name = var.target
   }
 }
 
@@ -110,7 +119,7 @@ resource "aws_iam_policy" "publisher" {
   tags = {
     Purpose         = "Publisher Policy for redirect of ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v4.0.0"
   }
 }
 
@@ -200,6 +209,6 @@ resource "aws_cloudfront_distribution" "redirect" {
   tags = {
     Purpose         = "Cloudfront Distribution for redirect ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v4.0.0"
   }
 }

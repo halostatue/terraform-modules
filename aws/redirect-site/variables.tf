@@ -1,4 +1,3 @@
-# AWS Configuration Variables
 variable "bucket" {
   description = "The (optional) name for the S3 bucket to create for deployment."
   default     = ""
@@ -6,11 +5,6 @@ variable "bucket" {
 
 variable "domain" {
   description = "The name of the domain to provision."
-}
-
-variable "routing-rules" {
-  description = "Custom routing rules for the distribution."
-  default     = ""
 }
 
 variable "not-found-response-path" {

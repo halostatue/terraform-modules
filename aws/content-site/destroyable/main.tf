@@ -21,7 +21,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
 
     random = {
@@ -45,7 +45,6 @@ resource "random_id" "content-key" {
 
 resource "aws_s3_bucket" "logs" {
   bucket = "${local.bucket_name}-log"
-  acl    = "log-delivery-write"
 
   lifecycle_rule {
     id      = "tfstate"
@@ -60,12 +59,33 @@ resource "aws_s3_bucket" "logs" {
   tags = {
     Purpose         = "Log bucket for static site ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
   }
+}
+
+resource "aws_s3_bucket_acl" "logs" {
+  bucket = aws_s3_bucket.logs.id
+  acl    = "log-delivery-write"
 }
 
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket_name
+
+  tags = {
+    Purpose         = "Bucket for static site ${var.domain}"
+    Terraform       = true
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+  }
+}
+
+resource "aws_s3_bucket_logging" "bucket" {
+  bucket        = aws_s3_bucket.bucket.id
+  target_bucket = aws_s3_bucket.logs.id
+  target_prefix = "log/"
+}
+
+resource "aws_s3_bucket_policy" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
     Id      = "AccessPolicy-${local.bucket_name}"
     Version = "2012-10-17"
@@ -88,22 +108,17 @@ resource "aws_s3_bucket" "bucket" {
       }
     ]
   })
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "404.html"
-    routing_rules  = var.routing-rules
+resource "aws_s3_bucket_website_configuration" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  index_document {
+    suffix = "index.html"
   }
 
-  logging {
-    target_bucket = aws_s3_bucket.logs.id
-    target_prefix = "log/"
-  }
-
-  tags = {
-    Purpose         = "Bucket for static site ${var.domain}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
+  error_document {
+    key = "404.html"
   }
 }
 
@@ -113,7 +128,7 @@ resource "aws_iam_user" "publisher" {
   tags = {
     Purpose         = "Publishing user for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
   }
 }
 
@@ -161,7 +176,7 @@ resource "aws_iam_policy" "publisher" {
   tags = {
     Purpose         = "Publishing user policy for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
   }
 }
 
@@ -251,6 +266,6 @@ resource "aws_cloudfront_distribution" "content" {
   tags = {
     Purpose         = "Cloudfront distribution for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
   }
 }
