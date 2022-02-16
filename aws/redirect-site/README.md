@@ -17,7 +17,7 @@ configuration.
 
 ```terraform
 module "redirect" {
-  source = "github.com/halostatue/terraform-modules//aws/redirect-site?ref=v2.0"
+  source = "github.com/halostatue/terraform-modules//aws/redirect-site?ref=v4.0"
 
   bucket              = "www.example.com-redirect"
   domain              = "example.com"
@@ -33,7 +33,7 @@ module "redirect" {
 ## Input
 
 - **`domain`**: The name of the domain to provision.
-- **`publisher`**: The name/ID of publisher user. This should be the output
+- **`publisher`**: The name/ID of publisher user. This should be from the output
   of an `aws/content-site` build.
 - **`target`**: The destination hostname for the redirect. Do not include a
   protocol.
@@ -46,13 +46,12 @@ module "redirect" {
 - `content-key-base`: The base value of the content key used to prevent
   duplicate content penalties from being applied by Google. If not provided,
   defaults to the `domain` provided.
-- `routing-rules`: Custom routing rules for the distribution. Must be a JSON
-  document.
 - `not-found-response-path`: The path to the object returned when the site
   cannot be found. Defaults to `/404.html`.
 - `domain-aliases`: The optional list of aliases of the domain to provide in
   the distribution. Defaults to just the `domain` provided.
-- `acm-certificate-arn`: The optional, but recommended ACM Certificate ARN.
+- `acm-certificate-arn`: The optional, but recommended ACM Certificate ARN. All
+  CloudFront-available ARNs must be created in `us-east-1`.
 - `default-ttl`: The default TTL for the distribution, in seconds. Defaults
   to 86,400 seconds (1 day).
 - `max-ttl`: The maximum TTL for the distribution, in seconds. Defaults to

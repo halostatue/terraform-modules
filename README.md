@@ -16,24 +16,14 @@ The modules also take care of:
 These modules are originally derived from [scripts][] by [Ringo De Smet][], but
 are no longer compatible with those scripts.
 
-## Versioning
-
-`halostatue/terraform-modules` aims to mostly follow [Semantic Versioning][],
-noted by `git` tags. Major tags (e.g., `v3.x`) will move with the most recent
-minor release of a version (it will move from `v3.0.x` to `v3.1.x` as
-appropriate). Minor tags (e.g., `v3.0.x`) will move with the patch releases, if
-necessary.
-
-This is version 3.1.1, tagged variously as `v3.1.0`, `v3.1.x`, and `v3.x`, which
+This is version 4.0.0, tagged variously as `v4.0.0`, `v4.0.x`, and `v4.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.1.1`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.1.x`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.0.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.0.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.x`
 
-It is strongly recommended you use the `ref` to select a specific branch, as
-there may be incompatible changes in future versions, and `master` may be
-considered unstable.
+There are special upgrade instructions for release 4.0.0, see the Changelog
 
 ## Introduction
 
@@ -45,15 +35,6 @@ This release has removed the previously provided examples until they can be
 reworked from the current consumers of these modules.
 
 Each module has its own README which should be read before using.
-
-### `aws/s3-tfstate-bucket`
-
-These two modules are used to create and manage the bucket that holds all of
-the Terraform shared state.
-
-Read more about:
-
-- [`aws/s3-tfstate-bucket`][]
 
 ### `aws/content-site` and `aws/redirect-site`
 
@@ -81,6 +62,18 @@ Read more about:
 - [`aws/content-site`][]
 - [`aws/redirect-site`][]
 
+## Versioning
+
+`halostatue/terraform-modules` aims to mostly follow [Semantic Versioning][],
+noted by `git` tags. Major tags (e.g., `v4.x`) will move with the most recent
+minor release of a version (it will move from `v4.0.x` to `v4.1.x` as
+appropriate). Minor tags (e.g., `v4.0.x`) will move with the patch releases, if
+necessary.
+
+It is strongly recommended you use the `ref` to select a specific branch, as
+there may be incompatible changes in future versions, and `master` may be
+considered unstable.
+
 [terraform]: https://www.terraform.io/
 [ringo de smet]: https://ringo.de-smet.name
 [scripts]: https://github.com/ringods/terraform-website-s3-cloudfront-route53
@@ -88,4 +81,3 @@ Read more about:
 [semantic versioning]: http://semver.org/
 [`aws/content-site`]: https://github.com/halostatue/terraform-modules/tree/v2.0/aws/content-site
 [`aws/redirect-site`]: https://github.com/halostatue/terraform-modules/tree/v2.0/aws/redirect-site
-[`aws/s3-tfstate-bucket`]: https://github.com/halostatue/terraform-modules/tree/v2.0/aws/s3-tfstate-bucket
