@@ -24,11 +24,11 @@ minor release of a version (it will move from `v3.0.x` to `v3.1.x` as
 appropriate). Minor tags (e.g., `v3.0.x`) will move with the patch releases, if
 necessary.
 
-This is version 3.0, tagged variously as `v3.0.0`, `v3.0.x`, and `v3.x`, which
+This is version 3.1.1, tagged variously as `v3.1.0`, `v3.1.x`, and `v3.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.0.0`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.0.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.1.1`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.1.x`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v3.x`
 
 It is strongly recommended you use the `ref` to select a specific branch, as

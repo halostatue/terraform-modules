@@ -31,7 +31,7 @@ resource "aws_acm_certificate" "certificate" {
   tags = {
     Purpose         = "Certificate for ${var.domain-name}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/create-certificate@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/create-certificate@v3.1.1"
   }
 }
 

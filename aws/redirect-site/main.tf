@@ -63,7 +63,7 @@ resource "aws_s3_bucket" "bucket" {
   tags = {
     Purpose         = "Redirect Bucket of ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
   }
 
   lifecycle {
@@ -114,7 +114,7 @@ resource "aws_iam_policy" "publisher" {
   tags = {
     Purpose         = "Publisher Policy for redirect of ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
   }
 }
 
@@ -204,6 +204,6 @@ resource "aws_cloudfront_distribution" "redirect" {
   tags = {
     Purpose         = "Cloudfront Distribution for redirect ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.1.1"
   }
 }

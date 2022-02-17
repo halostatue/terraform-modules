@@ -47,10 +47,20 @@ resource "aws_s3_bucket" "logs" {
   bucket = "${local.bucket_name}-log"
   acl    = "log-delivery-write"
 
+  lifecycle_rule {
+    id      = "tfstate"
+    prefix  = ""
+    enabled = true
+
+    expiration {
+      days = var.log-expiration-days
+    }
+  }
+
   tags = {
     Purpose         = "Log bucket for static site ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
   }
 }
 
@@ -93,7 +103,7 @@ resource "aws_s3_bucket" "bucket" {
   tags = {
     Purpose         = "Bucket for static site ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
   }
 }
 
@@ -103,7 +113,7 @@ resource "aws_iam_user" "publisher" {
   tags = {
     Purpose         = "Publishing user for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
   }
 }
 
@@ -151,7 +161,7 @@ resource "aws_iam_policy" "publisher" {
   tags = {
     Purpose         = "Publishing user policy for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
   }
 }
 
@@ -241,6 +251,6 @@ resource "aws_cloudfront_distribution" "content" {
   tags = {
     Purpose         = "Cloudfront distribution for ${var.domain}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.1.1"
   }
 }

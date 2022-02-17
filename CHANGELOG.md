@@ -1,3 +1,8 @@
+## 3.1.1 / 2022-02-17
+
+- Added a lifecycle rule to `content-site.aws_s3_bucket.logs` bucket to prevent
+  the log from growing forever. Defaults to 30 days.
+
 ## 3.1.0 / 2022-02-16
 
 - Removed `var.aws-region` and `var.aws-profile` from all modules. Use provider

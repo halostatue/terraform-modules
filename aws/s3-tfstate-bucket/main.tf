@@ -45,7 +45,7 @@ resource "aws_s3_bucket" "terraform" {
   tags = {
     Purpose         = "Terraform state bucket"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/s3-tfstate-bucket@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/s3-tfstate-bucket@v3.1.1"
   }
 }
 
