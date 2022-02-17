@@ -38,10 +38,6 @@ resource "aws_s3_bucket" "terraform" {
     }
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
-
   tags = {
     Purpose         = "Terraform state bucket"
     Terraform       = true

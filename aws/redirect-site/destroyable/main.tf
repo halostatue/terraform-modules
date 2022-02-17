@@ -1,5 +1,5 @@
-# Create a setup to serve a static website from an AWS S3 bucket, with a
-# Cloudfront CDN and certificates from AWS Certificate Manager.
+# Create a setup to redirect from an AWS S3 bucket + CloudFront distribution to
+# a different distribution.
 #
 # Bucket name restrictions:
 #    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
@@ -31,106 +31,51 @@ terraform {
   }
 }
 
+provider "aws" {
+  region  = var.aws-region
+  profile = var.aws-profile
+}
+
 locals {
   bucket_name = replace(coalesce(var.bucket, var.domain), ".", "-")
-}
-
-resource "random_id" "content-key" {
-  keepers = {
-    domain = coalesce(var.content-key-base, var.domain)
-  }
-
-  byte_length = 32
-}
-
-resource "aws_s3_bucket" "logs" {
-  bucket = "${local.bucket_name}-log"
-  acl    = "log-delivery-write"
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  tags = {
-    Purpose         = "Log bucket for static site ${var.domain}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
-  }
 }
 
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket_name
   policy = jsonencode({
-    Id      = "AccessPolicy-${local.bucket_name}"
+    Id      = "RedirectReadPolicy-${var.bucket}"
     Version = "2012-10-17"
 
     Statement = [
       {
-        Sid       = "PublicReadAccess"
-        Principal = "*"
+        Sid = "PublicReadAccess"
 
-        Effect = "Allow"
-        Action = ["s3:GetObject"]
-
-        Resource = ["arn:aws:s3:::${local.bucket_name}/*"]
-
-        Condition = {
-          StringEquals = {
-            "aws:UserAgent" = random_id.content-key.b64_url
-          }
+        Principal = {
+          AWS = "*"
         }
+
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = ["arn:aws:s3:::${local.bucket_name}/*"]
       }
     ]
   })
 
   website {
-    index_document = "index.html"
-    error_document = "404.html"
-    routing_rules  = var.routing-rules
-  }
-
-  logging {
-    target_bucket = aws_s3_bucket.logs.id
-    target_prefix = "log/"
+    redirect_all_requests_to = "https://${var.target}"
   }
 
   tags = {
-    Purpose         = "Bucket for static site ${var.domain}"
+    Purpose         = "Redirect Bucket of ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_iam_user" "publisher" {
-  name = "${local.bucket_name}-publisher"
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  tags = {
-    Purpose         = "Publishing user for ${var.domain}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
-  }
-}
-
-resource "aws_iam_access_key" "publisher" {
-  user = aws_iam_user.publisher.name
-
-  lifecycle {
-    create_before_destroy = true
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
   }
 }
 
 resource "aws_iam_policy" "publisher" {
   name        = "${aws_s3_bucket.bucket.id}-publisher-policy"
   path        = "/"
-  description = "Policy allowing publication of a new website version for ${var.domain} to S3."
+  description = "Policy allowing publication of a new website version to S3."
   policy = jsonencode({
     Id      = "PublisherPolicy-${aws_s3_bucket.bucket.id}"
     Version = "2012-10-17"
@@ -145,6 +90,7 @@ resource "aws_iam_policy" "publisher" {
       {
         Sid    = "PublisherWriteAccess"
         Effect = "Allow"
+
         Action = [
           "s3:DeleteObject",
           "s3:GetObject",
@@ -153,8 +99,10 @@ resource "aws_iam_policy" "publisher" {
           "s3:PutObject",
           "s3:PutObjectAcl",
         ]
+
         Resource = ["${aws_s3_bucket.bucket.arn}/*"]
       },
+
       {
         Sid      = "PublisherInvalidateAccess"
         Effect   = "Allow"
@@ -165,19 +113,19 @@ resource "aws_iam_policy" "publisher" {
   })
 
   tags = {
-    Purpose         = "Publishing user policy for ${var.domain}"
+    Purpose         = "Publisher Policy for redirect of ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
   }
 }
 
 resource "aws_iam_policy_attachment" "publisher" {
   name       = "${aws_s3_bucket.bucket.id}-publisher-policy-attachment"
-  users      = [aws_iam_user.publisher.name]
+  users      = [var.publisher]
   policy_arn = aws_iam_policy.publisher.arn
 }
 
-resource "aws_cloudfront_distribution" "content" {
+resource "aws_cloudfront_distribution" "redirect" {
   enabled         = true
   is_ipv6_enabled = true
 
@@ -194,7 +142,7 @@ resource "aws_cloudfront_distribution" "content" {
 
     custom_header {
       name  = "User-Agent"
-      value = random_id.content-key.b64_url
+      value = var.content-key
     }
   }
 
@@ -255,8 +203,8 @@ resource "aws_cloudfront_distribution" "content" {
   }
 
   tags = {
-    Purpose         = "Cloudfront distribution for ${var.domain}"
+    Purpose         = "Cloudfront Distribution for redirect ${var.domain} to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
   }
 }

@@ -1,4 +1,52 @@
-## 3.0 / 2022-02-04
+## 3.1.0 / 2022-02-16
+
+- Removed `var.aws-region` and `var.aws-profile` from all modules. Use provider
+  inheritance or aliases instead.
+
+  ```terraform
+  provider "aws" {
+    alias    = "usw2"
+    provilde = "default"
+    region   = "us-west-2"
+  }
+
+  module "terraform-bucket" {
+    source = "github.com/halostatue/terraform-modules//aws/s3-tfstate-bucket?ref=v3.x"
+
+    providers = {
+      aws = aws.usw2
+    }
+  }
+  ```
+
+- Added a `/destroyable` sub-module that removes resource lifecycle management.
+  To destroy a resource set using this module, there are multiple steps to be
+  taken. Assuming a module like the following:
+
+  ```
+  module "terraform-bucket" {
+    source = "github.com/halostatue/terraform-modules//aws/s3-tfstate-bucket?ref=v3.x"
+  }
+  ```
+
+  The module declaration would be changed to:
+
+  ```
+  module "terraform-bucket" {
+    source = "github.com/halostatue/terraform-modules//aws/s3-tfstate-bucket/destroyable?ref=v3.x"
+
+    count = 0
+  }
+  ```
+
+  Any `output` values referring to the module would need to be removed and then
+  it is necessary to run `terraform init` followed by a `plan` or `apply` to
+  remove the resource. After this, the module reference can be removed.
+
+  The resource and its `/destroyable` counterpart will be kept in sync across
+  versions.
+
+## 3.0.0 / 2022-02-04
 
 - Update modules to support Terraform 1.1.5+. These files should work with
   versions `>= 0.13`.
