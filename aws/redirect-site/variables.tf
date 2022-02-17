@@ -1,28 +1,4 @@
 # AWS Configuration Variables
-variable "aws-region" {
-  description = "The (optional) name of the AWS Region to use."
-
-  type = string
-  # nullable = false
-
-  validation {
-    condition     = length(var.aws-region) > 4 && can(regex("^[a-z]+-[a-z]+-[0-9]+", var.aws-region))
-    error_message = "The aws-region must not be blank and must match the usual format."
-  }
-}
-
-variable "aws-profile" {
-  description = "The (optional) name of the AWS CLI profile name to use."
-
-  type = string
-  # nullable = false
-
-  validation {
-    condition     = length(var.aws-profile) > 1 && can(regex("^[-a-z0-9_]+$", var.aws-profile))
-    error_message = "The aws-profile must not be blank and must match the usual format."
-  }
-}
-
 variable "bucket" {
   description = "The (optional) name for the S3 bucket to create for deployment."
   default     = ""
@@ -43,7 +19,7 @@ variable "not-found-response-path" {
 }
 
 variable "domain-aliases" {
-  type        = list
+  type        = list(any)
   description = "The (optional) aliases of the domain to provide."
   default     = []
 }
