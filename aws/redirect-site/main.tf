@@ -31,11 +31,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  region  = var.aws-region
-  profile = var.aws-profile
-}
-
 locals {
   bucket_name = replace(coalesce(var.bucket, var.domain), ".", "-")
 }
