@@ -47,10 +47,6 @@ resource "aws_s3_bucket" "logs" {
   bucket = "${local.bucket_name}-log"
   acl    = "log-delivery-write"
 
-  lifecycle {
-    prevent_destroy = true
-  }
-
   tags = {
     Purpose         = "Log bucket for static site ${var.domain}"
     Terraform       = true
@@ -99,18 +95,10 @@ resource "aws_s3_bucket" "bucket" {
     Terraform       = true
     TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
   }
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_iam_user" "publisher" {
   name = "${local.bucket_name}-publisher"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 
   tags = {
     Purpose         = "Publishing user for ${var.domain}"
@@ -121,10 +109,6 @@ resource "aws_iam_user" "publisher" {
 
 resource "aws_iam_access_key" "publisher" {
   user = aws_iam_user.publisher.name
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_iam_policy" "publisher" {
