@@ -51,6 +51,16 @@ resource "aws_s3_bucket" "logs" {
     prevent_destroy = true
   }
 
+  lifecycle_rule {
+    id      = "tfstate"
+    prefix  = ""
+    enabled = true
+
+    expiration {
+      days = var.log-expiration-days
+    }
+  }
+
   tags = {
     Purpose         = "Log bucket for static site ${var.domain}"
     Terraform       = true

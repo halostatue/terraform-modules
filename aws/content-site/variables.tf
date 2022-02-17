@@ -46,3 +46,8 @@ variable "max-ttl" {
   description = "The maximum TTL for the distribution in seconds (1200, 86400, 31536000)."
   default     = 31536000 // ~365 Days
 }
+
+variable "log-expiration-days" {
+  description = "The number of days until a log file expires."
+  default     = 30
+}
