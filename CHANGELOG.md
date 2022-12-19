@@ -1,4 +1,25 @@
-## 4.0.0/ 2022-02-17
+# Changelog
+
+## 5.0.0 / 2022-02-19
+
+- For all modules:
+
+  - `output.tf`, `variables.tf`, `versions.tf` have been extracted if they were
+    not already.
+
+  - Normalized variable names to use `kebab-case`.
+
+  - Reshaped the outputs.
+
+- `aws/content-site`:
+
+  - Enabled key rotation on `aws/content-site` created publisher users.
+
+  - Restored `var.routing-rules` into `aws/content-site` module.
+
+- Updated [MIGRATION.md](MIGRATION.md) for v4 to v5 upgrades.
+
+## 4.0.0 / 2022-02-17
 
 - Removed `aws/s3-tfstate-bucket` module. This was created for early versions of
   Terraform remote state management, and is no longer useful as a separate
@@ -11,7 +32,7 @@
 
 - Updated to support terraform-provider-aws 4.0. After upgrading it is necessary
   to import items to your local state to prevent data loss. Follow the
-  instructions in [MIGRATION.md](MIGRATION.md#migrating-to-v4).
+  instructions in [MIGRATION.md](MIGRATION.md#migrating-v3-to-v4).
 
 ## 3.1.1 / 2022-02-17
 

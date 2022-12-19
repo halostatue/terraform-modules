@@ -1,38 +1,39 @@
-output "publisher" {
-  value = aws_iam_user.publisher.name
+output "site" {
+  value = {
+    bucket = aws_s3_bucket.bucket.id
+
+    logs-bucket = aws_s3_bucket.logs.id
+
+    created-domain = local.create-domain > 1 ? aws_route53_record.dns-record[0].fqdn : null
+
+    publisher = {
+      created               = var.create-publisher
+      name                  = var.create-publisher == false ? null : aws_iam_user.publisher[0].name
+      additional-publishers = var.additional-publishers
+    }
+
+    cdn = {
+      id          = aws_cloudfront_distribution.distribution.id
+      domain-name = aws_cloudfront_distribution.distribution.domain_name
+      zone-id     = aws_cloudfront_distribution.distribution.hosted_zone_id
+      aliases     = join(",", aws_cloudfront_distribution.distribution.aliases.*)
+    }
+  }
 }
 
-output "bucket-name" {
-  value = aws_s3_bucket.bucket.id
-}
-
-output "publisher-access-key" {
+output "publisher-access-keys" {
   sensitive = true
-  value     = <<CREDENTIALS
-
-[${aws_iam_user.publisher.name}]
-aws_access_key_id = ${aws_iam_access_key.publisher.id}
-aws_secret_access_key = ${aws_iam_access_key.publisher.secret}
-
-CREDENTIALS
-}
-
-output "cdn-id" {
-  value = aws_cloudfront_distribution.content.id
-}
-
-output "cdn-aliases" {
-  value = join(",", aws_cloudfront_distribution.content.aliases.*)
-}
-
-output "cdn-domain" {
-  value = aws_cloudfront_distribution.content.domain_name
-}
-
-output "cdn-zone-id" {
-  value = aws_cloudfront_distribution.content.hosted_zone_id
+  value = var.create-publisher == false ? {} : merge([
+    for name, key in aws_iam_access_key.publisher-access-key : {
+      (name) = {
+        id     = key.id
+        secret = key.secret
+        status = key.status
+      }
+  }]...)
 }
 
 output "content-key" {
-  value = random_id.content-key.b64_url
+  sensitive = true
+  value     = random_id.content-key.b64_url
 }

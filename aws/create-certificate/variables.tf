@@ -2,7 +2,6 @@ variable "domain-name" {
   description = "The main domain name for the certificate. Wildcard certificates can be specified."
 
   type = string
-  # nullable = false
 }
 
 variable "alternate-names" {
@@ -10,7 +9,6 @@ variable "alternate-names" {
 
   type    = list(string)
   default = []
-  # nullable = true
 }
 
 variable "validation-method" {

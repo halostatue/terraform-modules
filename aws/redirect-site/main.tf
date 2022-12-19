@@ -1,92 +1,91 @@
-# Create a setup to redirect from an AWS S3 bucket + CloudFront distribution to
-# a different distribution.
-#
-# Bucket name restrictions:
-#    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-#
-# Duplicate Content Penalty protection:
-#    Description: https://support.google.com/webmasters/answer/66359?hl=en
-#    Solution: http://tuts.emrealadag.com/post/cloudfront-cdn-for-s3-static-web-hosting/
-#        Section: Restricting S3 access to Cloudfront
-#
-# Deploy remark:
-#    Do not push files to the S3 bucket with an ACL giving public READ access,
-#    e.g s3-sync --acl-public
-#
-# 2016-05-16
-#    AWS Certificate Manager supports multiple regions. To use CloudFront with
-#    ACM certificates, the certificates must be requested in region us-east-1
-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.1"
-    }
-  }
-}
-
 locals {
-  bucket_name = replace(coalesce(var.bucket, var.domain), ".", "-")
+  bucket-name    = replace(coalesce(var.bucket, var.target), ".", "-")
+  domain-aliases = distinct(compact(var.domain-aliases))
 }
 
 resource "aws_s3_bucket" "bucket" {
-  bucket = local.bucket_name
+  bucket = local.bucket-name
 
   tags = {
-    Purpose         = "Redirect Bucket of ${var.domain} to ${var.target}"
+    Purpose         = "Redirect requests for this bucket to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.0"
   }
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes = [
-      lifecycle_rule
-    ]
   }
 }
 
 resource "aws_s3_bucket_policy" "bucket" {
   bucket = aws_s3_bucket.bucket.id
+
   policy = jsonencode({
-    Id      = "RedirectReadPolicy-${var.bucket}"
+    Id      = "AccessPolicy-${local.bucket-name}"
     Version = "2012-10-17"
 
     Statement = [
       {
         Sid = "PublicReadAccess"
-
         Principal = {
           AWS = "*"
         }
 
-        Effect   = "Allow"
-        Action   = ["s3:GetObject"]
-        Resource = ["arn:aws:s3:::${local.bucket_name}/*"]
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+
+        Resource = ["arn:aws:s3:::${local.bucket-name}/*"]
+
+        Condition = {
+          StringEquals = {
+            "aws:UserAgent" = var.content-key
+          }
+        }
       }
     ]
   })
+}
+
+resource "aws_s3_bucket_ownership_controls" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = var.block-public-policy
+  ignore_public_acls      = true
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_s3_bucket_website_configuration" "bucket" {
   bucket = aws_s3_bucket.bucket.id
 
   redirect_all_requests_to {
-    protocol  = "https"
+    protocol  = var.target-protocol
     host_name = var.target
   }
 }
 
 resource "aws_iam_policy" "publisher" {
-  name        = "${aws_s3_bucket.bucket.id}-publisher-policy"
   path        = "/"
-  description = "Policy allowing publication of a new website version to S3."
+  description = "Policy allowing publication for redirects for ${var.target} from S3."
+
   policy = jsonencode({
     Id      = "PublisherPolicy-${aws_s3_bucket.bucket.id}"
     Version = "2012-10-17"
@@ -101,19 +100,14 @@ resource "aws_iam_policy" "publisher" {
       {
         Sid    = "PublisherWriteAccess"
         Effect = "Allow"
-
         Action = [
           "s3:DeleteObject",
           "s3:GetObject",
-          "s3:GetObjectAcl",
           "s3:ListBucket",
           "s3:PutObject",
-          "s3:PutObjectAcl",
         ]
-
         Resource = ["${aws_s3_bucket.bucket.arn}/*"]
       },
-
       {
         Sid      = "PublisherInvalidateAccess"
         Effect   = "Allow"
@@ -124,25 +118,40 @@ resource "aws_iam_policy" "publisher" {
   })
 
   tags = {
-    Purpose         = "Publisher Policy for redirect of ${var.domain} to ${var.target}"
+    Purpose         = "Publisher Policy for redirects to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v4.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.0"
   }
 }
 
-resource "aws_iam_policy_attachment" "publisher" {
-  name       = "${aws_s3_bucket.bucket.id}-publisher-policy-attachment"
-  users      = [var.publisher]
+resource "aws_iam_group" "publishers" {
+  count = length(var.publishers) > 0 ? 1 : 0
+  name  = "${aws_s3_bucket.bucket.id}-publishers"
+}
+
+resource "aws_iam_group_membership" "publishers" {
+  count = length(var.publishers) == 0 ? 0 : 1
+
+  name = "${aws_s3_bucket.bucket.id}-publishers"
+
+  users = var.publishers
+  group = aws_iam_group.publishers[0].name
+}
+
+resource "aws_iam_group_policy_attachment" "publishers" {
+  count = length(var.publishers) == 0 ? 0 : 1
+
+  group      = aws_iam_group.publishers[0].name
   policy_arn = aws_iam_policy.publisher.arn
 }
 
-resource "aws_cloudfront_distribution" "redirect" {
+resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
 
   origin {
     origin_id   = "${aws_s3_bucket.bucket.id}.origin"
-    domain_name = aws_s3_bucket.bucket.website_endpoint
+    domain_name = aws_s3_bucket_website_configuration.bucket.website_endpoint
 
     custom_origin_config {
       origin_protocol_policy = "http-only"
@@ -157,16 +166,16 @@ resource "aws_cloudfront_distribution" "redirect" {
     }
   }
 
-  aliases = distinct(compact(flatten(concat([var.domain], var.domain-aliases))))
+  aliases = local.domain-aliases
 
-  default_root_object = "index.html"
+  default_root_object = var.index-document
   retain_on_delete    = true
 
   custom_error_response {
     error_code            = "404"
-    error_caching_min_ttl = "360"
+    error_caching_min_ttl = var.error-ttl
     response_code         = "200"
-    response_page_path    = var.not-found-response-path
+    response_page_path    = "/${var.error-document}"
   }
 
   default_cache_behavior {
@@ -194,28 +203,28 @@ resource "aws_cloudfront_distribution" "redirect" {
     min_ttl     = 0
     default_ttl = var.default-ttl
     max_ttl     = var.max-ttl
+    compress    = true
 
-    // This redirects any HTTP request to HTTPS. Security first!
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
+    viewer_protocol_policy = var.target-protocol == "https" ? "redirect-to-https" : var.protocol-policy
   }
 
   restrictions {
     geo_restriction {
+      locations        = []
       restriction_type = "none"
     }
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = length(var.acm-certificate-arn) > 0 ? "false" : "true"
+    cloudfront_default_certificate = length(var.acm-certificate-arn) > 0 ? false : true
     acm_certificate_arn            = var.acm-certificate-arn
     ssl_support_method             = length(var.acm-certificate-arn) > 0 ? "sni-only" : ""
     minimum_protocol_version       = "TLSv1"
   }
 
   tags = {
-    Purpose         = "Cloudfront Distribution for redirect ${var.domain} to ${var.target}"
+    Purpose         = "Cloudfront Distribution for redirects to ${var.target}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v4.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.0"
   }
 }
