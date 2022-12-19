@@ -1,80 +1,78 @@
-# Create a setup to serve a static website from an AWS S3 bucket, with a
-# Cloudfront CDN and certificates from AWS Certificate Manager.
-#
-# Bucket name restrictions:
-#    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-#
-# Duplicate Content Penalty protection:
-#    Description: https://support.google.com/webmasters/answer/66359?hl=en
-#    Solution: http://tuts.emrealadag.com/post/cloudfront-cdn-for-s3-static-web-hosting/
-#        Section: Restricting S3 access to Cloudfront
-#
-# Deploy remark:
-#    Do not push files to the S3 bucket with an ACL giving public READ access,
-#    e.g s3-sync --acl-public
-#
-# 2016-05-16
-#    AWS Certificate Manager supports multiple regions. To use CloudFront with
-#    ACM certificates, the certificates must be requested in region us-east-1
-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.1"
-    }
-  }
-}
-
 locals {
-  bucket_name = replace(coalesce(var.bucket, var.domain), ".", "-")
+  fqdn           = join(".", compact([var.site-name, var.domain-name]))
+  bucket-name    = replace(coalesce(var.bucket, local.fqdn), ".", "-")
+  domain-aliases = distinct(compact(flatten(concat([local.fqdn], var.domain-aliases))))
+  create-domain = (
+    (
+      var.dns-zone-id == null || var.site-name == null
+    ) ? 0 : (length(var.dns-zone-id) > 0 && length(var.site-name) > 0) ? 1 : 0
+  )
 }
 
 resource "random_id" "content-key" {
   keepers = {
-    domain = coalesce(var.content-key-base, var.domain)
+    domain = coalesce(var.content-key-base, local.fqdn)
   }
 
   byte_length = 32
 }
 
 resource "aws_s3_bucket" "logs" {
-  bucket = "${local.bucket_name}-log"
+  bucket = "${local.bucket-name}-log"
 
-  lifecycle_rule {
-    id      = "tfstate"
-    prefix  = ""
-    enabled = true
+  tags = {
+    Purpose         = "Log bucket for static site ${local.fqdn}"
+    Terraform       = true
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+  bucket = aws_s3_bucket.logs.id
+  rule {
+    id     = "log-expiration"
+    status = "Enabled"
 
     expiration {
       days = var.log-expiration-days
     }
   }
+}
 
-  tags = {
-    Purpose         = "Log bucket for static site ${var.domain}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
+resource "aws_s3_bucket_ownership_controls" "logs" {
+  bucket = aws_s3_bucket.logs.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
   }
 }
 
-resource "aws_s3_bucket_acl" "logs" {
+resource "aws_s3_bucket_public_access_block" "logs" {
   bucket = aws_s3_bucket.logs.id
-  acl    = "log-delivery-write"
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "logs" {
+  bucket = aws_s3_bucket.logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_s3_bucket" "bucket" {
-  bucket = local.bucket_name
+  bucket = local.bucket-name
 
   tags = {
-    Purpose         = "Bucket for static site ${var.domain}"
+    Purpose         = "Bucket for static site ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v3.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
   }
 }
 
@@ -86,19 +84,22 @@ resource "aws_s3_bucket_logging" "bucket" {
 
 resource "aws_s3_bucket_policy" "bucket" {
   bucket = aws_s3_bucket.bucket.id
+
   policy = jsonencode({
-    Id      = "AccessPolicy-${local.bucket_name}"
+    Id      = "AccessPolicy-${local.bucket-name}"
     Version = "2012-10-17"
 
     Statement = [
       {
-        Sid       = "PublicReadAccess"
-        Principal = "*"
+        Sid = "PublicReadAccess"
+        Principal = {
+          AWS = "*"
+        }
 
         Effect = "Allow"
         Action = ["s3:GetObject"]
 
-        Resource = ["arn:aws:s3:::${local.bucket_name}/*"]
+        Resource = ["arn:aws:s3:::${local.bucket-name}/*"]
 
         Condition = {
           StringEquals = {
@@ -110,36 +111,82 @@ resource "aws_s3_bucket_policy" "bucket" {
   })
 }
 
+resource "aws_s3_bucket_ownership_controls" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = var.block-public-policy
+  ignore_public_acls      = true
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_s3_bucket_website_configuration" "bucket" {
   bucket = aws_s3_bucket.bucket.id
 
   index_document {
-    suffix = "index.html"
+    suffix = var.index-document
   }
 
   error_document {
-    key = "404.html"
+    key = var.error-document
   }
+
+  routing_rules = var.routing-rules
 }
 
 resource "aws_iam_user" "publisher" {
-  name = "${local.bucket_name}-publisher"
+  count = var.create-publisher == false ? 0 : 1
+
+  name = coalesce(var.publisher-name, "${local.bucket-name}-publisher")
 
   tags = {
-    Purpose         = "Publishing user for ${var.domain}"
+    Purpose         = "Publishing user for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
   }
 }
 
-resource "aws_iam_access_key" "publisher" {
-  user = aws_iam_user.publisher.name
+locals {
+  publisher_key_versions = var.create-publisher == false ? {} : (
+    var.publisher-key-versions == null ? { "v1" = "Active" } :
+    merge([for kv in var.publisher-key-versions : { (kv.name) = kv.status }]...)
+  )
+}
+
+resource "aws_iam_access_key" "publisher-access-key" {
+  for_each = local.publisher_key_versions
+
+  user   = aws_iam_user.publisher[0].id
+  status = each.value
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_iam_policy" "publisher" {
   name        = "${aws_s3_bucket.bucket.id}-publisher-policy"
   path        = "/"
-  description = "Policy allowing publication of a new website version for ${var.domain} to S3."
+  description = "Policy allowing publication of a new website version for ${local.fqdn} to S3."
+
   policy = jsonencode({
     Id      = "PublisherPolicy-${aws_s3_bucket.bucket.id}"
     Version = "2012-10-17"
@@ -157,10 +204,8 @@ resource "aws_iam_policy" "publisher" {
         Action = [
           "s3:DeleteObject",
           "s3:GetObject",
-          "s3:GetObjectAcl",
           "s3:ListBucket",
           "s3:PutObject",
-          "s3:PutObjectAcl",
         ]
         Resource = ["${aws_s3_bucket.bucket.arn}/*"]
       },
@@ -174,25 +219,48 @@ resource "aws_iam_policy" "publisher" {
   })
 
   tags = {
-    Purpose         = "Publishing user policy for ${var.domain}"
+    Purpose         = "Publishing user policy for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
   }
 }
 
 resource "aws_iam_policy_attachment" "publisher" {
+  count = var.create-publisher == false ? 0 : 1
+
   name       = "${aws_s3_bucket.bucket.id}-publisher-policy-attachment"
-  users      = [aws_iam_user.publisher.name]
+  users      = [aws_iam_user.publisher[0].name]
   policy_arn = aws_iam_policy.publisher.arn
 }
 
-resource "aws_cloudfront_distribution" "content" {
+resource "aws_iam_group" "additional-publishers" {
+  count = length(var.additional-publishers) == 0 ? 0 : 1
+  name  = "${aws_s3_bucket.bucket.id}-additional-publishers"
+}
+
+resource "aws_iam_group_membership" "additional-publishers" {
+  count = length(var.additional-publishers) == 0 ? 0 : 1
+
+  name = "${aws_s3_bucket.bucket.id}-additional-publishers"
+
+  users = var.additional-publishers
+  group = aws_iam_group.additional-publishers[0].name
+}
+
+resource "aws_iam_group_policy_attachment" "additional-publishers" {
+  count = length(var.additional-publishers) == 0 ? 0 : 1
+
+  group      = aws_iam_group.additional-publishers[0].name
+  policy_arn = aws_iam_policy.publisher.arn
+}
+
+resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
 
   origin {
     origin_id   = "${aws_s3_bucket.bucket.id}.origin"
-    domain_name = aws_s3_bucket.bucket.website_endpoint
+    domain_name = aws_s3_bucket_website_configuration.bucket.website_endpoint
 
     custom_origin_config {
       origin_protocol_policy = "http-only"
@@ -207,16 +275,16 @@ resource "aws_cloudfront_distribution" "content" {
     }
   }
 
-  aliases = distinct(compact(flatten(concat([var.domain], var.domain-aliases))))
+  aliases = local.domain-aliases
 
-  default_root_object = "index.html"
+  default_root_object = var.index-document
   retain_on_delete    = true
 
   custom_error_response {
     error_code            = "404"
-    error_caching_min_ttl = "360"
+    error_caching_min_ttl = var.error-ttl
     response_code         = "200"
-    response_page_path    = var.not-found-response-path
+    response_page_path    = "/${var.error-document}"
   }
 
   default_cache_behavior {
@@ -244,28 +312,42 @@ resource "aws_cloudfront_distribution" "content" {
     min_ttl     = 0
     default_ttl = var.default-ttl
     max_ttl     = var.max-ttl
+    compress    = true
 
-    // This redirects any HTTP request to HTTPS. Security first!
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
+    viewer_protocol_policy = var.protocol-policy
   }
 
   restrictions {
     geo_restriction {
+      locations        = []
       restriction_type = "none"
     }
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = length(var.acm-certificate-arn) > 0 ? "false" : "true"
+    cloudfront_default_certificate = length(var.acm-certificate-arn) > 0 ? false : true
     acm_certificate_arn            = var.acm-certificate-arn
     ssl_support_method             = length(var.acm-certificate-arn) > 0 ? "sni-only" : ""
     minimum_protocol_version       = "TLSv1"
   }
 
   tags = {
-    Purpose         = "Cloudfront distribution for ${var.domain}"
+    Purpose         = "Cloudfront distribution for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v4.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+  }
+}
+
+resource "aws_route53_record" "dns-record" {
+  count = local.create-domain
+
+  zone_id = var.dns-zone-id
+  name    = var.site-name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.distribution.hosted_zone_id
+    evaluate_target_health = false
   }
 }

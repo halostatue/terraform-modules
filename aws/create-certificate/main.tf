@@ -1,14 +1,3 @@
-# Create a managed certificate.
-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
 locals {
   validation-method                           = coalesce(var.validation-method, "EMAIL")
   certificate-transparency-logging-preference = coalesce(var.certificate-transparency-logging-preference, "ENABLED")
@@ -31,7 +20,7 @@ resource "aws_acm_certificate" "certificate" {
   tags = {
     Purpose         = "Certificate for ${var.domain-name}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/create-certificate@v3.1.1"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/create-certificate@v5.0.0"
   }
 }
 

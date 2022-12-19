@@ -1,19 +1,12 @@
-output "bucket-name" {
-  value = aws_s3_bucket.bucket.id
-}
+output "site" {
+  value = {
+    bucket = aws_s3_bucket.bucket.id
 
-output "cdn-id" {
-  value = aws_cloudfront_distribution.redirect.id
-}
-
-output "cdn-aliases" {
-  value = join(",", aws_cloudfront_distribution.redirect.aliases.*)
-}
-
-output "cdn-domain" {
-  value = aws_cloudfront_distribution.redirect.domain_name
-}
-
-output "cdn-zone-id" {
-  value = aws_cloudfront_distribution.redirect.hosted_zone_id
+    cdn = {
+      id          = aws_cloudfront_distribution.distribution.id
+      domain-name = aws_cloudfront_distribution.distribution.domain_name
+      zone-id     = aws_cloudfront_distribution.distribution.hosted_zone_id
+      aliases     = join(",", aws_cloudfront_distribution.distribution.aliases.*)
+    }
+  }
 }

@@ -13,17 +13,14 @@ The modules also take care of:
 - access logging; and
 - redirecting HTTP to HTTPS.
 
-These modules are originally derived from [scripts][] by [Ringo De Smet][], but
-are no longer compatible with those scripts.
-
-This is version 4.0.0, tagged variously as `v4.0.0`, `v4.0.x`, and `v4.x`, which
+This is version 5.0.0, tagged variously as `v5.0.0`, `v5.0.x`, and `v5.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.0.0`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.0.x`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v4.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.0.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.0.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.x`
 
-There are special upgrade instructions for release 4.0.0, see the Changelog
+There are special upgrade instructions for release 5.0.0, see the Changelog
 
 ## Introduction
 
@@ -65,14 +62,23 @@ Read more about:
 ## Versioning
 
 `halostatue/terraform-modules` aims to mostly follow [Semantic Versioning][],
-noted by `git` tags. Major tags (e.g., `v4.x`) will move with the most recent
-minor release of a version (it will move from `v4.0.x` to `v4.1.x` as
-appropriate). Minor tags (e.g., `v4.0.x`) will move with the patch releases, if
+noted by `git` tags. Major tags (e.g., `v5.x`) will move with the most recent
+minor release of a version (it will move from `v5.0.x` to `v5.1.x` as
+appropriate). Minor tags (e.g., `v5.0.x`) will move with the patch releases, if
 necessary.
 
 It is strongly recommended you use the `ref` to select a specific branch, as
 there may be incompatible changes in future versions, and `master` may be
 considered unstable.
+
+## Contributors
+
+- Austin Ziegler derived the initial versions of these modules from [scripts][]
+  by [Ringo De Smet][].
+
+  - Further work was done in conjunction with Kinetic Commerce where we had
+    originally adopted derivations on the modules in this repo. With version
+    5.x, Kinetic Commerce will be using this module for website-like buckets.
 
 [terraform]: https://www.terraform.io/
 [ringo de smet]: https://ringo.de-smet.name
