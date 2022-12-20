@@ -13,10 +13,10 @@ resource "aws_route53_record" "spf_txt" {
 }
 
 locals {
-  dmarc_sp     = var.subdomains-send-email ? "none" : "reject"
-  dmarc_rua    = length(var.dmarc-rua) > 0 ? ";rua=${join(",", var.dmarc-rua)}" : ""
-  dmarc_ruf    = length(var.dmarc-ruf) > 0 ? ";ruf=${join(",", var.dmarc-ruf)}" : ""
-  dmarc_record = "v=DMARC1;p=reject;sp=${local.dmarc_sp};adkim=s;aspf=s;fo=1${local.dmarc-rua}${local.dmarc-ruf}"
+  dmarc-sp     = var.subdomains-send-email ? "none" : "reject"
+  dmarc-rua    = length(var.dmarc-rua) > 0 ? ";rua=${join(",", var.dmarc-rua)}" : ""
+  dmarc-ruf    = length(var.dmarc-ruf) > 0 ? ";ruf=${join(",", var.dmarc-ruf)}" : ""
+  dmarc-record = "v=DMARC1;p=reject;sp=${local.dmarc-sp};adkim=s;aspf=s;fo=1${local.dmarc-rua}${local.dmarc-ruf}"
 }
 
 resource "aws_route53_record" "dmarc" {
@@ -24,7 +24,7 @@ resource "aws_route53_record" "dmarc" {
   zone_id = var.zone-id
 
   name    = "_dmarc.${var.name}"
-  records = [local.dmarc_record]
+  records = [local.dmarc-record]
 
   ttl = var.ttl
 }
