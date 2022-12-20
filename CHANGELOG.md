@@ -1,6 +1,15 @@
 # Changelog
 
-## 5.0.0 / 2022-02-19
+## 5.0.1 / 2022-12-20
+
+- Added `aws/content-site` output value `site.publishers` and removed
+  `site.publishers.additional-publishers`. The old value was a copy of
+  `var.additional-publishers` whereas the new value is a compound value that
+  combines `var.additional-publishers` with the created publisher (if it exists)
+  and can be used to pass to `aws/redirect-site` input variable `publishers`,
+  e.g., `publishers = module.content.site.publishers`.
+
+## 5.0.0 / 2022-12-20
 
 - For all modules:
 

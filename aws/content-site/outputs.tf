@@ -7,10 +7,13 @@ output "site" {
     created-domain = local.create-domain > 1 ? aws_route53_record.dns-record[0].fqdn : null
 
     publisher = {
-      created               = var.create-publisher
-      name                  = var.create-publisher == false ? null : aws_iam_user.publisher[0].name
-      additional-publishers = var.additional-publishers
+      created = var.create-publisher
+      name    = var.create-publisher == false ? null : aws_iam_user.publisher[0].name
     }
+
+    publishers = concat(
+      var.create-publisher == false ? [] : [aws_iam_user.publisher[0].name], var.additional-publishers
+    )
 
     cdn = {
       id          = aws_cloudfront_distribution.distribution.id
