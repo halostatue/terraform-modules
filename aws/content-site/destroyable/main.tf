@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "logs" {
   tags = {
     Purpose         = "Log bucket for static site ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
@@ -72,7 +72,7 @@ resource "aws_s3_bucket" "bucket" {
   tags = {
     Purpose         = "Bucket for static site ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
@@ -160,7 +160,7 @@ resource "aws_iam_user" "publisher" {
   tags = {
     Purpose         = "Publishing user for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
@@ -221,7 +221,7 @@ resource "aws_iam_policy" "publisher" {
   tags = {
     Purpose         = "Publishing user policy for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
@@ -334,7 +334,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   tags = {
     Purpose         = "Cloudfront distribution for ${local.fqdn}"
     Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.0"
+    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
