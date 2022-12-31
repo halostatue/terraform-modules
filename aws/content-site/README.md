@@ -128,7 +128,8 @@ module "content" {
 
     - `name`: The name of the created publisher user or `null`.
 
-    - `additional-publishers`: The names of additional publisher users.
+  - `publishers`: The list of `var.additional-publishers` and the optionally
+    created publisher user.
 
   - `cdn`: An object with the values:
 
