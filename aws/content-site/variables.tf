@@ -168,3 +168,10 @@ variable "protocol-policy" {
   default = "redirect-to-https"
   type    = string
 }
+
+variable "tags" {
+  description = "Default tags for the created resources."
+
+  default = {}
+  type    = map(string)
+}

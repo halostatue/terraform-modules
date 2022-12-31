@@ -114,15 +114,7 @@ into standard terraform definitions or an internal module.
    +
    +  lifecycle {
    +    prevent_destroy = true
-   +    ignore_changes = [
-   +      lifecycle_rule
-   +    ]
    +  }
-   +}
-   +
-   +resource "aws_s3_bucket_acl" "terraform-state-bucket" {
-   +  bucket = aws_s3_bucket.terraform-state-bucket.id
-   +  acl    = "private"
    +}
    +
    +resource "aws_s3_bucket_versioning" "terraform-state-bucket" {
@@ -146,10 +138,32 @@ into standard terraform definitions or an internal module.
    +  }
    +}
    +
+   +resource "aws_s3_bucket_ownership_controls" "terraform-state-bucket" {
+   +  bucket = aws_s3_bucket.terraform-state-bucket.id
+   +
+   +  rule {
+   +    object_ownership = "BucketOwnerEnforced"
+   +  }
+   +}
+   +
    +resource "aws_s3_bucket_public_access_block" "terraform-state-bucket" {
    +  bucket              = aws_s3_bucket.terraform-state-bucket.id
    +  block_public_acls   = true
    +  block_public_policy = true
+   +  block_public_acls       = true
+   +  block_public_policy     = true
+   +  ignore_public_acls      = true
+   +  restrict_public_buckets = true
+   +}
+   +
+   +resource "aws_s3_bucket_server_side_encryption_configuration" "terraform-state-bucket" {
+   +  bucket = aws_s3_bucket.terraform-state-bucket.id
+   +
+   +  rule {
+   +    apply_server_side_encryption_by_default {
+   +      sse_algorithm = "AES256"
+   +    }
+   +  }
    +}
    +
    +resource "aws_iam_user_policy" "terraform-state-bucket-policy" {
