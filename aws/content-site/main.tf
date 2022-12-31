@@ -20,11 +20,14 @@ resource "random_id" "content-key" {
 resource "aws_s3_bucket" "logs" {
   bucket = "${local.bucket-name}-log"
 
-  tags = {
-    Purpose         = "Log bucket for static site ${local.fqdn}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "content-site log bucket for ${local.fqdn}"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
+    }
+  )
 
   lifecycle {
     prevent_destroy = true
@@ -73,11 +76,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "logs" {
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket-name
 
-  tags = {
-    Purpose         = "Bucket for static site ${local.fqdn}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "content-site content bucket for ${local.fqdn}"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
+    }
+  )
 
   lifecycle {
     prevent_destroy = true
@@ -165,14 +171,17 @@ resource "aws_iam_user" "publisher" {
 
   name = coalesce(var.publisher-name, "${local.bucket-name}-publisher")
 
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "content-site publisher for ${local.fqdn}"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
+    }
+  )
+
   lifecycle {
     prevent_destroy = true
-  }
-
-  tags = {
-    Purpose         = "Publishing user for ${local.fqdn}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
   }
 }
 
@@ -230,11 +239,14 @@ resource "aws_iam_policy" "publisher" {
     ]
   })
 
-  tags = {
-    Purpose         = "Publishing user policy for ${local.fqdn}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "content-site publisher policy for ${local.fqdn}"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
+    }
+  )
 }
 
 resource "aws_iam_policy_attachment" "publisher" {
@@ -343,11 +355,14 @@ resource "aws_cloudfront_distribution" "distribution" {
     minimum_protocol_version       = "TLSv1"
   }
 
-  tags = {
-    Purpose         = "Cloudfront distribution for ${local.fqdn}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "content-site cloudfront distribution for ${local.fqdn}"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
+    }
+  )
 }
 
 resource "aws_route53_record" "dns-record" {

@@ -6,11 +6,14 @@ locals {
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket-name
 
-  tags = {
-    Purpose         = "Redirect requests for this bucket to ${var.target}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "redirect-site bucket for redirects to ${var.target} (destroyable)"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
+    }
+  )
 }
 
 resource "aws_s3_bucket_policy" "bucket" {
@@ -113,11 +116,14 @@ resource "aws_iam_policy" "publisher" {
     ]
   })
 
-  tags = {
-    Purpose         = "Publisher Policy for redirects to ${var.target}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "redirect-site publisher policy for redirects to ${var.target} (destroyable)"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
+    }
+  )
 }
 
 resource "aws_iam_group" "publishers" {
@@ -218,9 +224,11 @@ resource "aws_cloudfront_distribution" "distribution" {
     minimum_protocol_version       = "TLSv1"
   }
 
-  tags = {
-    Purpose         = "Cloudfront Distribution for redirects to ${var.target}"
-    Terraform       = true
-    TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.0.1"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Purpose         = "redirect-site cloudfront distribution for redirects to ${var.target} (destroyable)"
+      Terraform       = true
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
+  })
 }

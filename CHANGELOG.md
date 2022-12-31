@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.1.0 / 2022-12-31
+
+- Renamed `aws/create-certificate` to `aws/acm-certificate` and removed email
+  validation. Ensured that domain validation records can be created correctly
+  with different Route 53 zone IDs as required.
+
+- Added `tags` input map variable to `aws/acm-certificate`, `aws/content-site`,
+  and `aws/redirect-site` so that additional tags may be passed. Note that the
+  tags `Purpose`, `Terraform`, and `TerraformModule` will _always_ be set from
+  the module.
+
 ## 5.0.1 / 2022-12-20
 
 - Added `aws/content-site` output value `site.publishers` and removed

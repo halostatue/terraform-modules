@@ -107,3 +107,10 @@ variable "content-key" {
   default = ""
   type    = string
 }
+
+variable "tags" {
+  description = "Default tags for the created resources."
+
+  default = {}
+  type    = map(string)
+}
