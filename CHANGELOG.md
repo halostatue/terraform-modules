@@ -1,5 +1,22 @@
 # Changelog
 
+## 5.2.0 / 2023-01-25
+
+- Restructured permissions assignment for `aws/content-site`. Previously, when
+  creating a publisher user, the publisher policy would be assigned directly to
+  that user. An `additional-publishers` group would be created only if there
+  were entries in `var.additional-publishers`. Now, if a publisher user is
+  created _or_ there are entries in `var.additional-publishers`, a `publishers`
+  group will be created and the publisher policy will be attached to that group.
+
+- Added `aws/content-site` and `aws/rediret-site` variable
+  `var.additional-publisher-groups` which will attach the publisher policy to
+  each group named it contains. Each group must already exist.
+
+- Restructured `aws/content-site` / `aws/content-site/destroyable` and
+  `aws/redirect-site` / `aws/redirect-site/destroyable` so that more of the
+  content is shared between the directories as symlinks.
+
 ## 5.1.0 / 2022-12-31
 
 - Renamed `aws/create-certificate` to `aws/acm-certificate` and removed email

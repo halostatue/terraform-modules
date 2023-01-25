@@ -13,7 +13,7 @@ locals {
     {
       Purpose         = "acm-certificate for ${replace(var.domain-name, "*", "WILDCARD")}${local.sans-purpose}"
       Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/acm-certificate@v5.1.0"
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/acm-certificate@v5.2.0"
     }
   )
 }
