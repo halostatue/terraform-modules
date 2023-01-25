@@ -82,7 +82,10 @@ module "content" {
   a v1 key is created. This should be written as `[{ name = "v1", status = "Active" }]`.
   The `status` values may only be `Active` or `Inactive`.
 
-- `additional-publishers`: Additional publisher names to which to attach the
+- `additional-publishers`: Additional publisher names to which to add to the
+  publisher group.
+
+- `additional-publisher-groups`: Additional IAM groups to which to attach the
   publisher policy.
 
 - `dns-zone-id`: The AWS Route 53 Zone ID for creating the DNS record. If

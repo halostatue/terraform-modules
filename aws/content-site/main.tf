@@ -1,93 +1,9 @@
-locals {
-  fqdn           = join(".", compact([var.site-name, var.domain-name]))
-  bucket-name    = replace(coalesce(var.bucket, local.fqdn), ".", "-")
-  domain-aliases = distinct(compact(flatten(concat([local.fqdn], var.domain-aliases))))
-  create-domain = (
-    (
-      var.dns-zone-id == null || var.site-name == null
-    ) ? 0 : (length(var.dns-zone-id) > 0 && length(var.site-name) > 0) ? 1 : 0
-  )
-}
-
 resource "random_id" "content-key" {
   keepers = {
     domain = coalesce(var.content-key-base, local.fqdn)
   }
 
   byte_length = 32
-}
-
-resource "aws_s3_bucket" "logs" {
-  bucket = "${local.bucket-name}-log"
-
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "content-site log bucket for ${local.fqdn}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "logs" {
-  bucket = aws_s3_bucket.logs.id
-  rule {
-    id     = "log-expiration"
-    status = "Enabled"
-
-    expiration {
-      days = var.log-expiration-days
-    }
-  }
-}
-
-resource "aws_s3_bucket_ownership_controls" "logs" {
-  bucket = aws_s3_bucket.logs.id
-
-  rule {
-    object_ownership = "BucketOwnerEnforced"
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "logs" {
-  bucket = aws_s3_bucket.logs.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "logs" {
-  bucket = aws_s3_bucket.logs.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket" "bucket" {
-  bucket = local.bucket-name
-
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "content-site content bucket for ${local.fqdn}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_s3_bucket_logging" "bucket" {
@@ -166,32 +82,6 @@ resource "aws_s3_bucket_website_configuration" "bucket" {
   routing_rules = var.routing-rules
 }
 
-resource "aws_iam_user" "publisher" {
-  count = var.create-publisher == false ? 0 : 1
-
-  name = coalesce(var.publisher-name, "${local.bucket-name}-publisher")
-
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "content-site publisher for ${local.fqdn}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-locals {
-  publisher_key_versions = var.create-publisher == false ? {} : (
-    var.publisher-key-versions == null ? { "v1" = "Active" } :
-    merge([for kv in var.publisher-key-versions : { (kv.name) = kv.status }]...)
-  )
-}
-
 resource "aws_iam_access_key" "publisher-access-key" {
   for_each = local.publisher_key_versions
 
@@ -239,42 +129,36 @@ resource "aws_iam_policy" "publisher" {
     ]
   })
 
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "content-site publisher policy for ${local.fqdn}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
-    }
-  )
+  tags = merge(local.tags, { Purpose = "content-site publisher policy for ${local.fqdn}" })
 }
 
-resource "aws_iam_policy_attachment" "publisher" {
-  count = var.create-publisher == false ? 0 : 1
+resource "aws_iam_group" "publishers" {
+  count = local.publishers-count > 0 ? 1 : 0
 
-  name       = "${aws_s3_bucket.bucket.id}-publisher-policy-attachment"
-  users      = [aws_iam_user.publisher[0].name]
+  name = "${aws_s3_bucket.bucket.id}-publishers"
+}
+
+resource "aws_iam_group_membership" "publishers" {
+  count = local.publishers-count > 0 ? 1 : 0
+
+  name = "${aws_s3_bucket.bucket.id}-publishers"
+
+  users = concat(
+    tolist(var.additional-publishers),
+    var.create-publisher == false ? [] : [aws_iam_user.publisher[0].name]
+  )
+  group = aws_iam_group.publishers[0].name
+}
+
+resource "aws_iam_group_policy_attachment" "publishers" {
+  group      = aws_iam_group.publishers[0].name
   policy_arn = aws_iam_policy.publisher.arn
 }
 
-resource "aws_iam_group" "additional-publishers" {
-  count = length(var.additional-publishers) == 0 ? 0 : 1
-  name  = "${aws_s3_bucket.bucket.id}-additional-publishers"
-}
+resource "aws_iam_group_policy_attachment" "additional-publisher-groups" {
+  for_each = var.additional-publisher-groups
 
-resource "aws_iam_group_membership" "additional-publishers" {
-  count = length(var.additional-publishers) == 0 ? 0 : 1
-
-  name = "${aws_s3_bucket.bucket.id}-additional-publishers"
-
-  users = var.additional-publishers
-  group = aws_iam_group.additional-publishers[0].name
-}
-
-resource "aws_iam_group_policy_attachment" "additional-publishers" {
-  count = length(var.additional-publishers) == 0 ? 0 : 1
-
-  group      = aws_iam_group.additional-publishers[0].name
+  group      = each.value
   policy_arn = aws_iam_policy.publisher.arn
 }
 
@@ -355,14 +239,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     minimum_protocol_version       = "TLSv1"
   }
 
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "content-site cloudfront distribution for ${local.fqdn}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.1.0"
-    }
-  )
+  tags = merge(local.tags, { Purpose = "content-site cloudfront distribution for ${local.fqdn}" })
 }
 
 resource "aws_route53_record" "dns-record" {
