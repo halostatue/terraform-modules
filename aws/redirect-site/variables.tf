@@ -101,6 +101,13 @@ variable "publishers" {
   type    = list(string)
 }
 
+variable "additional-publisher-groups" {
+  description = "Additional IAM groups to which the publisher policy will be attached."
+
+  default = []
+  type    = set(string)
+}
+
 variable "content-key" {
   description = "The content key used to prevent duplicate content penalties from being applied by Google."
 

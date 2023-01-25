@@ -1,25 +1,3 @@
-locals {
-  bucket-name    = replace(coalesce(var.bucket, var.target), ".", "-")
-  domain-aliases = distinct(compact(var.domain-aliases))
-}
-
-resource "aws_s3_bucket" "bucket" {
-  bucket = local.bucket-name
-
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "redirect-site bucket for redirects to ${var.target}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
-    }
-  )
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
 resource "aws_s3_bucket_policy" "bucket" {
   bucket = aws_s3_bucket.bucket.id
 
@@ -120,14 +98,7 @@ resource "aws_iam_policy" "publisher" {
     ]
   })
 
-  tags = merge(
-    var.tags,
-    {
-      Purpose         = "redirect-site publisher policy for redirects to ${var.target}"
-      Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
-    }
-  )
+  tags = merge(local.tags, { Purpose = "redirect-site publisher policy for redirects to ${var.target}" })
 }
 
 resource "aws_iam_group" "publishers" {
@@ -148,6 +119,13 @@ resource "aws_iam_group_policy_attachment" "publishers" {
   count = length(var.publishers) == 0 ? 0 : 1
 
   group      = aws_iam_group.publishers[0].name
+  policy_arn = aws_iam_policy.publisher.arn
+}
+
+resource "aws_iam_group_policy_attachment" "additional-publisher-groups" {
+  for_each = var.additional-publisher-groups
+
+  group      = each.value
   policy_arn = aws_iam_policy.publisher.arn
 }
 
@@ -229,10 +207,10 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 
   tags = merge(
-    var.tags,
+    local.tags,
     {
       Purpose         = "redirect-site cloudfront distribution for redirects to ${var.target}"
       Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.1.0"
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.2.0"
   })
 }

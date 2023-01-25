@@ -77,6 +77,9 @@ module "redirect" {
 
 - `publishers`: The names or IDs of publisher users.
 
+- `additional-publisher-groups`: Additional IAM groups to which to attach the
+  publisher policy.
+
 - `content-key`: The content key used to prevent duplicate content penalties
   from being applied by Google.
 
