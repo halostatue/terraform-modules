@@ -12,7 +12,8 @@ output "site" {
     }
 
     publishers = concat(
-      var.create-publisher == false ? [] : [aws_iam_user.publisher[0].name], var.additional-publishers
+      var.create-publisher == false ? [] : [aws_iam_user.publisher[0].name],
+      tolist(var.additional-publishers)
     )
 
     cdn = {

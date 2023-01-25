@@ -135,10 +135,17 @@ variable "publisher-key-versions" {
 }
 
 variable "additional-publishers" {
-  description = "Additional publisher names to which to attach the publisher policy."
+  description = "Additional publisher names to which to add to the publisher IAM group."
 
   default = []
-  type    = list(string)
+  type    = set(string)
+}
+
+variable "additional-publisher-groups" {
+  description = "Additional IAM groups to which the publisher policy will be attached."
+
+  default = []
+  type    = set(string)
 }
 
 variable "create-dns-record" {
