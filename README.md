@@ -13,11 +13,11 @@ The modules also take care of:
 - access logging; and
 - redirecting HTTP to HTTPS.
 
-This is version 5.1.0, tagged variously as `v5.1.0`, `v5.1.x`, and `v5.x`, which
+This is version 5.2.0, tagged variously as `v5.2.0`, `v5.2.x`, and `v5.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.1.0`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.1.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.2.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.2.x`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.x`
 
 There are special upgrade instructions for release 5.0.0, see the documents
