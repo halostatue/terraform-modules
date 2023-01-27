@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.2.0 / 2023-01-25
+## 5.2.0 / 2023-01-27
 
 - Restructured permissions assignment for `aws/content-site`. Previously, when
   creating a publisher user, the publisher policy would be assigned directly to
