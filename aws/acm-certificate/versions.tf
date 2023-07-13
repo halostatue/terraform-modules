@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = ">= 4.10.0, < 6.0.0"
 
       configuration_aliases = [aws.cloudfront-certificates, aws.route53]
     }
