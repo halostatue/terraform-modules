@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 
-Copyright 2017 — 2022 Austin Ziegler and contributors
+Copyright 2017 — 2023 Austin Ziegler and contributors
 
 Originally based on work copyright (c) 2016 Ringo De Smet.
 

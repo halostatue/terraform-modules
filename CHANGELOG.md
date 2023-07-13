@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.3.0 / 2023-07-13
+
+- Extended terraform-provider-aws version requirements to include any 5.x
+  version and any version 4.10 or higher.
+
 ## 5.2.0 / 2023-01-27
 
 - Restructured permissions assignment for `aws/content-site`. Previously, when

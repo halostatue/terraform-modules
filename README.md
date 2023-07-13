@@ -13,14 +13,14 @@ The modules also take care of:
 - access logging; and
 - redirecting HTTP to HTTPS.
 
-This is version 5.2.0, tagged variously as `v5.2.0`, `v5.2.x`, and `v5.x`, which
+This is version 5.3.0, tagged variously as `v5.3.0`, `v5.3.x`, and `v5.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.2.0`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.2.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.x`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.x`
 
-There are special upgrade instructions for release 5.0.0, see the documents
+There are special upgrade instructions for this version, see the documents
 [CHANGELOG](CHANGELOG.md) and [MIGRATION](MIGRATION.md)>
 
 ## Introduction
@@ -68,9 +68,9 @@ minor release of a version (it will move from `v5.0.x` to `v5.1.x` as
 appropriate). Minor tags (e.g., `v5.0.x`) will move with the patch releases, if
 necessary.
 
-It is strongly recommended you use the `ref` to select a specific branch, as
-there may be incompatible changes in future versions, and `master` may be
-considered unstable.
+It is strongly recommended you use the `ref` to select a specific tag, as there
+may be incompatible changes in future versions, and `master` may be considered
+unstable.
 
 ## Contributors
 
