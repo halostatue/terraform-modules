@@ -3,7 +3,7 @@ locals {
     var.tags,
     {
       Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.2.0"
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/content-site@v5.3.1"
     }
   )
 }

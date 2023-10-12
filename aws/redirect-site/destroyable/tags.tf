@@ -2,7 +2,7 @@ locals {
   tags = merge(
     var.tags, {
       Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site/destroyable@v5.2.0"
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site/destroyable@v5.3.1"
     }
   )
 }

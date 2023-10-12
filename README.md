@@ -13,10 +13,10 @@ The modules also take care of:
 - access logging; and
 - redirecting HTTP to HTTPS.
 
-This is version 5.3.0, tagged variously as `v5.3.0`, `v5.3.x`, and `v5.x`, which
+This is version 5.3.1, tagged variously as `v5.3.1`, `v5.3.x`, and `v5.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.1`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.x`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.x`
 

@@ -1,6 +1,10 @@
 # Changelog
 
-## 5.3.0 / 2023-07-13
+## 5.3.1 / 2023-10-12
+
+Fixed the `TerraformModule` tag version to be correct.
+
+## 5.3.1 / 2023-07-13
 
 - Extended terraform-provider-aws version requirements to include any 5.x
   version and any version 4.10 or higher.
