@@ -211,6 +211,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     {
       Purpose         = "redirect-site cloudfront distribution for redirects to ${var.target}"
       Terraform       = true
-      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.3.1"
+      TerraformModule = "github.com/halostatue/terraform-modules//aws/redirect-site@v5.4.0"
   })
 }

@@ -1,6 +1,12 @@
 # Changelog
 
-## 5.3.1 / 2023-10-12
+## 5.4.0 / 2024-01-08
+
+- Added optional CORS configuration to `aws/content-site`. This should be used
+  sparingly. If enabled, `GET` and `HEAD` requests are always allowed and expose
+  the `Authorization`, `Content-Length`, and `ETag` headers.
+
+## 5.3.2 / 2023-10-12
 
 Fixed the `TerraformModule` tag version to be correct.
 

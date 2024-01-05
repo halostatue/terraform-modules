@@ -10,14 +10,15 @@ The modules also take care of:
 - preventing the origin bucket being indexed by search bots (avoiding the
   Google [duplicate content penalty][]);
 - redirect other domains to the main site with proper rewriting;
+- properly handling CORS configuration;
 - access logging; and
 - redirecting HTTP to HTTPS.
 
-This is version 5.3.1, tagged variously as `v5.3.1`, `v5.3.x`, and `v5.x`, which
+This is version 5.4.0, tagged variously as `v5.4.0`, `v5.4.x`, and `v5.x`, which
 can be specified in a`module source` as:
 
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.1`
-- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.3.x`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.4.0`
+- `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.4.x`
 - `github.com/halostatue/terraform-modules//`_`<module>`_`?ref=v5.x`
 
 There are special upgrade instructions for this version, see the documents
