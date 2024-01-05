@@ -102,6 +102,30 @@ module "content" {
 - `tags`: Tags to be applied to the created certificate. The tags `Purpose`,
   `Terraform`, and `TerraformModule` will _always_ be set from the module.
 
+- `cors-rules`: CORS rules to be applied. Disabled by default. Can be enabled
+  only for `GET` and `HEAD` requests by providing an empty set. Otherwise,
+  this should be configured as a set of objects with the values:
+
+  - `allowed-origins`: A set of string values representing the allowed origin
+    URLs. Allow all origins with `*`.
+
+  - `allowed-headers`: A set of header names allowed. The default is `[*]`.
+
+  - `allowed-methods`: A set of allowed HTTP methods. The default is
+    `["GET", "HEAD", "PUT", "POST"]`.
+
+  - `expose-headers`: A set of headers that are returned via CORS. Defaults to
+
+    ```
+    [
+      "Authorization", "Content-Length", "ETag", "x-amz-acl", "x-amz-id-2",
+      "x-amz-request-id", "x-amz-server-side-encryption"
+    ]
+    ```
+
+  - `max-age-seconds`: The maximum age permitted for the request, in seconds.
+    Defaults to 240 seconds.
+
 ## Local Variables
 
 - `fqdn`: Either `site-name.domain-name` _or_ `domain-name`, depending on

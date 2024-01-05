@@ -12,6 +12,32 @@ resource "aws_s3_bucket_logging" "bucket" {
   target_prefix = "log/"
 }
 
+resource "aws_s3_bucket_cors_configuration" "bucket" {
+  count = var.cors-rules != null ? 1 : 0
+
+  bucket = aws_s3_bucket.bucket.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["Authorization", "Content-Length", "ETag"]
+    max_age_seconds = 3600
+  }
+
+  dynamic "cors_rule" {
+    for_each = var.cors-rules
+
+    content {
+      allowed_headers = cors_rule.value.allowed-headers
+      allowed_methods = cors_rule.value.allowed-methods
+      allowed_origins = cors_rule.value.allowed-origins
+      expose_headers  = cors_rule.value.expose-headers
+      max_age_seconds = cors_rule.value.max-age-seconds
+    }
+  }
+}
+
 resource "aws_s3_bucket_policy" "bucket" {
   bucket = aws_s3_bucket.bucket.id
 
@@ -206,11 +232,12 @@ resource "aws_cloudfront_distribution" "distribution" {
       "PUT",
     ]
 
-    cached_methods   = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
     target_origin_id = "${aws_s3_bucket.bucket.id}.origin"
 
     forwarded_values {
       query_string = false
+      headers      = ["Origin"]
 
       cookies {
         forward = "none"

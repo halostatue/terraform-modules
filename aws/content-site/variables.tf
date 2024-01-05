@@ -182,3 +182,20 @@ variable "tags" {
   default = {}
   type    = map(string)
 }
+
+variable "cors-rules" {
+  description = "CORS rules to be applied; always allows GET and HEAD requests regardless of origin or header if enabled"
+
+  default  = null
+  nullable = true
+  type = set(object({
+    allowed-origins = set(string)
+    allowed-headers = optional(set(string), ["*"])
+    allowed-methods = optional(set(string), ["GET", "HEAD", "PUT", "POST"])
+    expose-headers = optional(set(string), [
+      "Authorization", "Content-Length", "ETag", "x-amz-acl", "x-amz-id-2", "x-amz-request-id",
+      "x-amz-server-side-encryption"
+    ])
+    max-age-seconds = optional(number, 240)
+  }))
+}
